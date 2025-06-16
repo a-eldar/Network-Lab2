@@ -50,6 +50,11 @@
 
 #define WC_BATCH (10)
 
+// Additional Definitions:
+#define BITS_IN_BYTE (8)
+#define MEGA (1024 * 1024)
+
+
 enum {
     PINGPONG_RECV_WRID = 1,
     PINGPONG_SEND_WRID = 2,
@@ -57,7 +62,7 @@ enum {
 
 static int page_size;
 
-
+// The most useful struct for us - used to pass information
 struct pingpong_context {
     struct ibv_context		*context;
     struct ibv_comp_channel	*channel;
@@ -127,7 +132,6 @@ void gid_to_wire_gid(const union ibv_gid *gid, char wgid[])
     for (i = 0; i < 4; ++i)
         sprintf(&wgid[i * 8], "%08x", htonl(*(uint32_t *)(gid->raw + i * 4)));
 }
-
 static int pp_connect_ctx(struct pingpong_context *ctx, int port, int my_psn,
                           enum ibv_mtu mtu, int sl,
                           struct pingpong_dest *dest, int sgid_idx)
@@ -530,7 +534,7 @@ static int pp_post_send(struct pingpong_context *ctx)
     struct ibv_send_wr *bad_wr, wr = {
             .wr_id	    = PINGPONG_SEND_WRID,
             .sg_list    = &list,
-            .num_sge    = 1,
+            .num_sge    = 1, // length of the list
             .opcode     = IBV_WR_SEND,
             .send_flags = IBV_SEND_SIGNALED,
             .next       = NULL
@@ -611,6 +615,85 @@ static void usage(const char *argv0)
     printf("  -g, --gid-idx=<gid index> local port gid index\n");
 }
 
+
+
+
+
+
+
+
+
+
+///////////////// HELPER FUNCTIONS ////////////////
+
+double calculate_throughput(size_t bytes, double seconds) {
+    return (bytes * BITS_IN_BYTE) / (seconds * MEGA); // Convert to Mbps
+}
+
+void print_throughput(size_t size, double throughput) {
+    printf("%zu\t%.2f\tMbps\n", size, throughput);
+}
+
+void client_send_operation(int max_size, int size_step, int iters, struct pingpong_context *ctx) {
+    struct timespec start, end;
+    
+    for (int size = 1; size <= max_size; size *= size_step){
+        ctx->size = size;
+        ctx->buf = realloc(ctx->buf, roundup(size, page_size));
+        if (!ctx->buf)
+            return 1;
+        memset(ctx->buf, 0x7b, size);
+        // if (pp_connect_ctx()) - check if needed
+        
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
+        for (int i = 0; i < iters; i++) {
+            // if ((i != 0) && (i % tx_depth == 0)) {
+            //     pp_wait_completions(ctx, tx_depth);
+            // }
+            // if (pp_post_send(ctx)) {
+            //     fprintf(stderr, "Client ouldn't post send\n");
+            //     return 1;
+            // }
+            if (pp_post_send(ctx)) {
+                fprintf(stderr, "Client couldn't post send\n");
+                return 1;
+            }
+        }
+        pp_wait_completions(ctx, 1);
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        int total_time = (end.tv_sec - start.tv_sec) + 
+            (end.tv_nsec - start.tv_nsec) / 1e9;
+        double throughput = calculate_throughput(size * (iters), total_time);
+        print_throughput(size, throughput);
+
+    }
+}
+
+void server_recv_operation(struct pingpong_context *ctx, int iters, int max_size, int size_step) {
+    
+    for (int size = 1; size <= max_size; size *= size_step){
+        pp_wait_completions(ctx, iters);
+        
+        if (pp_post_send(ctx)) {
+            fprintf(stderr, "Server couldn't post send\n");
+            return 1;
+        }
+    }
+    
+}
+
+
+
+
+
+
+
+
+
+////////////// MAIN ///////////////
+
 int main(int argc, char *argv[])
 {
     struct ibv_device      **dev_list;
@@ -619,7 +702,7 @@ int main(int argc, char *argv[])
     struct pingpong_dest     my_dest;
     struct pingpong_dest    *rem_dest;
     char                    *ib_devname = NULL;
-    char                    *servername;
+    char                    *servername = NULL; // Modified: added `= NULL`
     int                      port = 12345;
     int                      ib_port = 1;
     enum ibv_mtu             mtu = IBV_MTU_2048;
@@ -628,6 +711,8 @@ int main(int argc, char *argv[])
     int                      iters = 1000;
     int                      use_event = 0;
     int                      size = 1;
+    int                      max_size = 1 << 30; // Added
+    int                      size_step = 2; // Added
     int                      sl = 0;
     int                      gidx = -1;
     char                     gid[33];
@@ -714,7 +799,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (optind == argc - 1)
+    if (optind == argc - 1) // If in case of client (./file_name <servername>)
         servername = strdup(argv[optind]);
     else if (optind < argc) {
         usage(argv[0]);
@@ -806,24 +891,12 @@ int main(int argc, char *argv[])
         if (pp_connect_ctx(ctx, ib_port, my_dest.psn, mtu, sl, rem_dest, gidx))
             return 1;
 
+    // Start of code
     if (servername) {
-        int i;
-        for (i = 0; i < iters; i++) {
-            if ((i != 0) && (i % tx_depth == 0)) {
-                pp_wait_completions(ctx, tx_depth);
-            }
-            if (pp_post_send(ctx)) {
-                fprintf(stderr, "Client ouldn't post send\n");
-                return 1;
-            }
-        }
+        client_send_operation(max_size, size_step, iters, ctx);
         printf("Client Done.\n");
     } else {
-        if (pp_post_send(ctx)) {
-            fprintf(stderr, "Server couldn't post send\n");
-            return 1;
-        }
-        pp_wait_completions(ctx, iters);
+        server_recv_operation(ctx, iters, max_size, size_step);
         printf("Server Done.\n");
     }
 
