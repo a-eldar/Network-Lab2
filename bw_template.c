@@ -642,7 +642,9 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
         ctx->buf = realloc(ctx->buf, roundup(size, page_size));
         if (!ctx->buf)
             return;
-        memset(ctx->buf, 0x7b, size);
+        memset(ctx->buf, 0x7b, size)
+        ctx->mr = ibv_reg_mr(ctx->pd, ctx->buf, size, IBV_ACCESS_LOCAL_WRITE);
+
         // if (pp_connect_ctx()) - check if needed
         
         clock_gettime(CLOCK_MONOTONIC, &start);
@@ -677,7 +679,7 @@ void server_recv_operation(struct pingpong_context *ctx, int iters, int max_size
     
     for (int size = 1; size <= max_size; size *= size_step){
         pp_wait_completions(ctx, iters);
-        
+        printf("Server received %d messages of size %d\n", iters, size);
         if (pp_post_send(ctx)) {
             fprintf(stderr, "Server couldn't post send\n");
             return;
