@@ -684,6 +684,7 @@ void server_recv_operation(struct pingpong_context *ctx, int iters, int max_size
             fprintf(stderr, "Server couldn't post send\n");
             return;
         }
+        pp_wait_completions(ctx, 1);
     }
     
 }
