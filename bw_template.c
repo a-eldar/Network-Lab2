@@ -661,6 +661,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
                 return;
             }
         }
+        pp_wait_completions(ctx, iters % tx_depth==0 ? tx_depth : iters % tx_depth);
         pp_wait_completions(ctx, 1);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
