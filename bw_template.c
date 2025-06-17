@@ -593,7 +593,6 @@ int pp_wait_completions(struct pingpong_context *ctx, int iters)
         }
 
     }
-    printf("Completed %d sends and %d receives\n", scnt, rcnt);
     return 0;
 }
 
