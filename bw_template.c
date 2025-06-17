@@ -656,7 +656,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
             //     return 1;
             // }
             if (pp_post_send(ctx)) {
-                fprintf(stderr, "Client couldn't post send\n");
+                fprintf(stderr, "Client couldn't post send after %d iterations, size=%d\n", i, size);
                 return;
             }
         }
