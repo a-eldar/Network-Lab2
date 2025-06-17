@@ -665,7 +665,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
             }
         }
         pp_wait_completions(ctx, iters % tx_depth==0 ? tx_depth : iters % tx_depth);
-        pp_wait_completions(ctx, 1);
+        // pp_wait_completions(ctx, 1);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
         int total_time = (end.tv_sec - start.tv_sec) + 
@@ -679,13 +679,15 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
 void server_recv_operation(struct pingpong_context *ctx, int iters, int max_size, int size_step) {
     
     for (int size = 1; size <= max_size; size *= size_step){
-        pp_wait_completions(ctx, iters);
-        printf("Server received %d messages of size %d\n", iters, size);
-        if (pp_post_send(ctx)) {
-            fprintf(stderr, "Server couldn't post send\n");
+        if(pp_wait_completions(ctx, iters)) {
+            fprintf(stderr, "Server couldn't wait for completions, size=%d\n", size);
             return;
         }
-        pp_wait_completions(ctx, 1);
+        // if (pp_post_send(ctx)) {
+        //     fprintf(stderr, "Server couldn't post send\n");
+        //     return;
+        // }
+        // pp_wait_completions(ctx, 1);
     }
     
 }
