@@ -593,7 +593,6 @@ int pp_wait_completions(struct pingpong_context *ctx, int iters)
         }
 
     }
-    printf("Completed %d sends and %d receives\n", scnt, rcnt);
     return 0;
 }
 
@@ -640,10 +639,10 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
 
     for (int size = 1; size <= max_size; size *= size_step){
         ctx->size = size;
-        ctx->buf = realloc(ctx->buf, roundup(size, page_size));
-        if (!ctx->buf)
-            return;
-        memset(ctx->buf, 0x7b, size);
+        // ctx->buf = realloc(ctx->buf, roundup(size, page_size));
+        // if (!ctx->buf)
+        //     return;
+        // memset(ctx->buf, 0x7b, size);
         //ctx->mr = ibv_reg_mr(ctx->pd, ctx->buf, size, IBV_ACCESS_LOCAL_WRITE);
 
         // if (pp_connect_ctx()) - check if needed
@@ -665,11 +664,12 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
             }
         }
         pp_wait_completions(ctx, iters % tx_depth==0 ? tx_depth : iters % tx_depth);
-        pp_wait_completions(ctx, 1);
+        // pp_wait_completions(ctx, 1);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        int total_time = (end.tv_sec - start.tv_sec) + 
+        double total_time = (end.tv_sec - start.tv_sec) + 
             (end.tv_nsec - start.tv_nsec) / 1e9;
+        
         double throughput = calculate_throughput(size * (iters), total_time);
         print_throughput(size, throughput);
 
@@ -679,13 +679,15 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
 void server_recv_operation(struct pingpong_context *ctx, int iters, int max_size, int size_step) {
     
     for (int size = 1; size <= max_size; size *= size_step){
-        pp_wait_completions(ctx, iters);
-        printf("Server received %d messages of size %d\n", iters, size);
-        if (pp_post_send(ctx)) {
-            fprintf(stderr, "Server couldn't post send\n");
+        if(pp_wait_completions(ctx, iters)) {
+            fprintf(stderr, "Server couldn't wait for completions, size=%d\n", size);
             return;
         }
-        pp_wait_completions(ctx, 1);
+        // if (pp_post_send(ctx)) {
+        //     fprintf(stderr, "Server couldn't post send\n");
+        //     return;
+        // }
+        // pp_wait_completions(ctx, 1);
     }
     
 }
@@ -716,8 +718,8 @@ int main(int argc, char *argv[])
     int                      tx_depth = 100;
     int                      iters = 1000;
     int                      use_event = 0;
-    int                      size = 1;
-    int                      max_size = 1 << 30; // Added
+    int                      max_size = 1 << 25; // Added
+    int                      size = max_size; // Cha
     int                      size_step = 2; // Added
     int                      sl = 0;
     int                      gidx = -1;
