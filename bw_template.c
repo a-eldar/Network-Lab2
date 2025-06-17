@@ -709,7 +709,7 @@ int main(int argc, char *argv[])
     int                      ib_port = 1;
     enum ibv_mtu             mtu = IBV_MTU_2048;
     int                      rx_depth = 100;
-    int                      tx_depth = 100;
+    int                      tx_depth = 10; // modified: changed from 100 to 10
     int                      iters = 1000;
     int                      use_event = 0;
     int                      size = 1;
