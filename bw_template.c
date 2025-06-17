@@ -634,9 +634,9 @@ void print_throughput(size_t size, double throughput) {
     printf("%zu\t%.2f\tMbps\n", size, throughput);
 }
 
-void client_send_operation(int max_size, int size_step, int iters, struct pingpong_context *ctx) {
+void client_send_operation(int max_size, int size_step, int iters, struct pingpong_context *ctx, int tx_depth) {
     struct timespec start, end;
-    int tx_depth = ctx->qp->cap.max_send_wr; // Use max send depth
+
     for (int size = 1; size <= max_size; size *= size_step){
         ctx->size = size;
         ctx->buf = realloc(ctx->buf, roundup(size, page_size));
@@ -650,7 +650,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
         for (int i = 0; i < iters; i++) {
             if ((i != 0) && (i % tx_depth == 0)) {
                 pp_wait_completions(ctx, tx_depth);
-                printf("Client sent %d messages of size %d\n", i, size);
+                //printf("Client sent %d messages of size %d\n", i, size);
             }
             // if (pp_post_send(ctx)) {
             //     fprintf(stderr, "Client ouldn't post send\n");
