@@ -642,7 +642,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
         ctx->buf = realloc(ctx->buf, roundup(size, page_size));
         if (!ctx->buf)
             return;
-        memset(ctx->buf, 0x7b, size)
+        memset(ctx->buf, 0x7b, size);
         ctx->mr = ibv_reg_mr(ctx->pd, ctx->buf, size, IBV_ACCESS_LOCAL_WRITE);
 
         // if (pp_connect_ctx()) - check if needed
