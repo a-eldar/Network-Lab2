@@ -902,10 +902,8 @@ int main(int argc, char *argv[])
     // Start of code
     if (servername) {
         client_send_operation(max_size, size_step, iters, ctx, tx_depth);
-        printf("Client Done.\n");
     } else {
         server_recv_operation(ctx, iters, max_size, size_step);
-        printf("Server Done.\n");
     }
 
     ibv_free_device_list(dev_list);
