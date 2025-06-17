@@ -718,7 +718,7 @@ int main(int argc, char *argv[])
     int                      tx_depth = 100;
     int                      iters = 1000;
     int                      use_event = 0;
-    int                      max_size = 1 << 20; // Added
+    int                      max_size = 1 << 25; // Added
     int                      size = max_size; // Cha
     int                      size_step = 2; // Added
     int                      sl = 0;
