@@ -641,7 +641,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
         ctx->size = size;
         ctx->buf = realloc(ctx->buf, roundup(size, page_size));
         if (!ctx->buf)
-            return 1;
+            return;
         memset(ctx->buf, 0x7b, size);
         // if (pp_connect_ctx()) - check if needed
         
@@ -657,7 +657,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
             // }
             if (pp_post_send(ctx)) {
                 fprintf(stderr, "Client couldn't post send\n");
-                return 1;
+                return;
             }
         }
         pp_wait_completions(ctx, 1);
@@ -678,7 +678,7 @@ void server_recv_operation(struct pingpong_context *ctx, int iters, int max_size
         
         if (pp_post_send(ctx)) {
             fprintf(stderr, "Server couldn't post send\n");
-            return 1;
+            return;
         }
     }
     
