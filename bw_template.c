@@ -593,6 +593,7 @@ int pp_wait_completions(struct pingpong_context *ctx, int iters)
         }
 
     }
+    printf("Completed %d sends and %d receives\n", scnt, rcnt);
     return 0;
 }
 
@@ -643,7 +644,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
         if (!ctx->buf)
             return;
         memset(ctx->buf, 0x7b, size);
-        ctx->mr = ibv_reg_mr(ctx->pd, ctx->buf, size, IBV_ACCESS_LOCAL_WRITE);
+        //ctx->mr = ibv_reg_mr(ctx->pd, ctx->buf, size, IBV_ACCESS_LOCAL_WRITE);
 
         // if (pp_connect_ctx()) - check if needed
         
