@@ -650,6 +650,7 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
         for (int i = 0; i < iters; i++) {
             if ((i != 0) && (i % tx_depth == 0)) {
                 pp_wait_completions(ctx, tx_depth);
+                printf("Client sent %d messages of size %d\n", i, size);
             }
             // if (pp_post_send(ctx)) {
             //     fprintf(stderr, "Client ouldn't post send\n");
