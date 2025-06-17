@@ -668,8 +668,9 @@ void client_send_operation(int max_size, int size_step, int iters, struct pingpo
         // pp_wait_completions(ctx, 1);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
-        int total_time = (end.tv_sec - start.tv_sec) + 
+        double total_time = (end.tv_sec - start.tv_sec) + 
             (end.tv_nsec - start.tv_nsec) / 1e9;
+        
         double throughput = calculate_throughput(size * (iters), total_time);
         print_throughput(size, throughput);
 
