@@ -1,5 +1,3 @@
-  local address:  LID 0x0001, QPN 0x000262, PSN 0xdd2eac, GID ::
-  remote address: LID 0x0003, QPN 0x000352, PSN 0x159a7b, GID ::
 1	13.93	Mbps
 2	0.89	Mbps
 4	62.93	Mbps
